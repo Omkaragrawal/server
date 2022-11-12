@@ -1,0 +1,52 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "badgeTemplate": "<a href='#contributors-'><img src='https://img.shields.io/badge/contributors-<%= contributors.length %>-default.svg?logo=github' alt='Contributors'/></a>",
+  "contributors": [
+    {
+      "login": "HuggableSquare",
+      "name": "nick",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5242865?v=4",
+      "profile": "https://pogonip.pw/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "k0staa",
+      "name": "Michał Kostewicz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6313392?v=4",
+      "profile": "http://code-addict.pl",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "cromefire",
+      "name": "Cromefire_",
+      "avatar_url": "https://avatars.githubusercontent.com/u/26320625?v=4",
+      "profile": "https://gitlab.com/cromefire_",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Omkaragrawal",
+      "name": "OMKAR AGRAWAL",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10913160?v=4",
+      "profile": "https://omkaragrawal.dev",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "server",
+  "projectOwner": "getferdi",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}

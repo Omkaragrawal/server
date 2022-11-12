@@ -5,17 +5,21 @@ node_modules
 tmp
 
 # Environment variables, never commit this file
-.env
+# .env
 
 # The development sqlite file
-database/development.sqlite
-database/adonis.sqlite
+*.sqlite
 
 # Uploaded recipes
 recipes/
 
 .DS_Store
+public/terms.html
+public/privacy.html
 
 resources/announcements/*.json
 !resources/announcements/version.json
 npm-debug.log
+yarn-error.log
+server*.log
+.idea

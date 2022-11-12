@@ -1,4 +1,3 @@
-
 const Recipe = use('App/Models/Recipe');
 const Helpers = use('Helpers');
 const Drive = use('Drive');
@@ -7,10 +6,10 @@ const {
 } = use('Validator');
 const Env = use('Env');
 
-const fetch = require('node-fetch');
 const targz = require('targz');
 const path = require('path');
 const fs = require('fs-extra');
+const semver = require('semver');
 
 const compress = (src, dest) => new Promise((resolve, reject) => {
   targz.compress({
@@ -30,7 +29,7 @@ class RecipeController {
   async list({
     response,
   }) {
-    const officialRecipes = JSON.parse(await (await fetch('https://api.franzinfra.com/v1/recipes')).text());
+    const officialRecipes = fs.readJsonSync(path.join(Helpers.appRoot(), 'recipes', 'all.json'));
     const customRecipesArray = (await Recipe.all()).rows;
     const customRecipes = customRecipesArray.map((recipe) => ({
       id: recipe.recipeId,
@@ -61,7 +60,6 @@ class RecipeController {
       name: 'required|string',
       id: 'required|unique:recipes,recipeId',
       author: 'required|accepted',
-      png: 'required|url',
       svg: 'required|url',
     });
     if (validation.fails()) {
@@ -92,7 +90,7 @@ class RecipeController {
 
     // Compress files to .tar.gz file
     const source = Helpers.tmpPath('recipe');
-    const destination = path.join(Helpers.appRoot(), `/recipes/${data.id}.tar.gz`);
+    const destination = path.join(Helpers.appRoot(), `/recipes/archives/${data.id}.tar.gz`);
 
     compress(
       source,
@@ -108,7 +106,6 @@ class RecipeController {
         featured: false,
         version: '1.0.0',
         icons: {
-          png: data.png,
           svg: data.svg,
         },
       }),
@@ -147,24 +144,47 @@ class RecipeController {
         ...typeof recipe.data === 'string' ? JSON.parse(recipe.data) : recipe.data,
       }));
     } else {
-      let remoteResults = [];
-      if (Env.get('CONNECT_WITH_FRANZ') == 'true') { // eslint-disable-line eqeqeq
-        remoteResults = JSON.parse(await (await fetch(`https://api.franzinfra.com/v1/recipes/search?needle=${encodeURIComponent(needle)}`)).text());
-      }
       const localResultsArray = (await Recipe.query().where('name', 'LIKE', `%${needle}%`).fetch()).toJSON();
-      const localResults = localResultsArray.map((recipe) => ({
+      results = localResultsArray.map((recipe) => ({
         id: recipe.recipeId,
         name: recipe.name,
         ...typeof recipe.data === 'string' ? JSON.parse(recipe.data) : recipe.data,
       }));
-
-      results = [
-        ...localResults,
-        ...remoteResults || [],
-      ];
     }
 
     return response.send(results);
+  }
+
+  popularRecipes({
+    response,
+  }) {
+    return response.send(
+      fs
+        .readJsonSync(path.join(
+          Helpers.appRoot(), 'recipes', 'all.json',
+        ))
+        .filter((recipe) => recipe.featured),
+    );
+  }
+
+  update({ request, response }) {
+    const updates = [];
+    const recipes = request.all();
+    const allJson = fs.readJsonSync(path.join(
+      Helpers.appRoot(), 'recipes', 'all.json',
+    ));
+
+    for (const recipe of Object.keys(recipes)) {
+      const version = recipes[recipe];
+
+      // Find recipe in local recipe repository
+      const localRecipe = allJson.find(r => r.id === recipe);
+      if (localRecipe && semver.lt(version, localRecipe.version)) {
+        updates.push(recipe);
+      }
+    }
+
+    return response.send(updates);
   }
 
   // Download a recipe
@@ -193,11 +213,9 @@ class RecipeController {
 
     // Check if recipe exists in recipes folder
     if (await Drive.exists(`${service}.tar.gz`)) {
-      return response.send(await Drive.get(`${service}.tar.gz`));
+      return response.type('.tar.gz').send(await Drive.get(`${service}.tar.gz`));
     }
-    if (Env.get('CONNECT_WITH_FRANZ') == 'true') { // eslint-disable-line eqeqeq
-      return response.redirect(`https://api.franzinfra.com/v1/recipes/download/${service}`);
-    }
+
     return response.status(400).send({
       message: 'Recipe not found',
       code: 'recipe-not-found',
